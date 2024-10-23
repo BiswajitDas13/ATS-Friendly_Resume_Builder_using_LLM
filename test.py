@@ -5,12 +5,11 @@ from fpdf import FPDF
 from docx import Document
 import streamlit as st
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-
 # Initialize NLTK
 nltk.download('punkt')
 
 # Set OpenAI API key
-openai.api_key = 'Your openai_key'
+openai.api_key = 'your openai key'
 
 # Function to chunk large job descriptions using LangChain
 def chunk_text(text, chunk_size=500, chunk_overlap=100):
@@ -34,11 +33,11 @@ def extract_keywords_from_chunks(chunks):
 def generate_summary_from_chunks(chunks):
     summary = ""
     for chunk in chunks:
-        prompt = f"Write a professional summary for a resume using the following information: {chunk}"
+        prompt = f"Write a professional summary for a resume using the following information: {chunk} also do not make gap on under the profile summary"
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-4o",
             messages=[
-                {"role": "system", "content": "You are an expert in writing professional resumes also provide good quality resume and propery maintain line of sequence ."},
+                {"role": "system", "content": "You are an expert in writing professional resumes also provide good quality resume and propery maintain line of sequence also profile summary write but maintain sequentially do not make gap any in resume  ."},
                 {"role": "user", "content": prompt},
             ],
             max_tokens=200,
@@ -51,61 +50,67 @@ def generate_summary_from_chunks(chunks):
 def generate_pdf(user_data, summary, education, experience, skills, interests, projects):
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", 'B', size=16)
-    pdf.cell(200, 10, txt="Resume - " + user_data['name'], ln=True, align='C')
+    pdf.set_font("Arial", 'B', size=14)
     
-    pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt="Contact Information", ln=True)
-    pdf.multi_cell(0, 10, txt=f"Email: {user_data['email']}\nPhone: {user_data['phone']}\nLinkedIn: {user_data['linkedin']}\nGithub: {user_data['Github']}")
+    # Title
+    pdf.cell(0, 10, txt="Resume - " + user_data['name'], ln=True, align='C')
+    pdf.ln(0)  # Add a small gap
+    
+    # Contact Information
+    pdf.set_font("Arial", size=10)
+    pdf.cell(0, 10, txt="Contact Information", ln=True)
+    pdf.multi_cell(0, 8, txt=f"Email: {user_data['email']}\nPhone: {user_data['phone']}\nLinkedIn: {user_data['linkedin']}\nGitHub: {user_data['Github']}")
+    
+    # Professional Summary
+    pdf.set_font("Arial", 'B', size=12)
+    pdf.cell(0, 10, txt="Professional Summary", ln=True)
+    pdf.set_font("Arial", size=10)
+    pdf.multi_cell(0, 5, txt=summary)
+    pdf.ln(0)  # Add a small gap
 
-    # Add Professional Summary
-    pdf.set_font("Arial", 'B', size=14)
-    pdf.cell(200, 10, txt="Professional Summary", ln=True)
-    pdf.set_font("Arial", size=12)
-    pdf.multi_cell(0, 10, txt=summary)
-
-    # Add Education
-    pdf.set_font("Arial", 'B', size=14)
-    pdf.cell(200, 10, txt="Education", ln=True)
-    pdf.set_font("Arial", size=12)
+    # Education
+    pdf.set_font("Arial", 'B', size=12)
+    pdf.cell(0, 10, txt="Education", ln=True)
+    pdf.set_font("Arial", size=10)
     for edu in education:
-        pdf.multi_cell(0, 10, txt=f"{edu['degree']} in {edu['field']} - {edu['institution']}\nCGPA/Percentage: {edu['cgpa']} | Year of Passing: {edu['year']}\n")
+        pdf.multi_cell(0, 8, txt=f"{edu['degree']} in {edu['field']} - {edu['institution']} | CGPA/Percentage: {edu['cgpa']} | Year: {edu['year']}")
     
-    # Add Skills
-    pdf.set_font("Arial", 'B', size=14)
-    pdf.cell(200, 10, txt="Skills", ln=True)
-    pdf.set_font("Arial", size=12)
-    pdf.multi_cell(0, 10, txt=", ".join(skills))
-    
-    # Add Projects
-    if projects:
-        pdf.set_font("Arial", 'B', size=14)
-        pdf.cell(200, 10, txt="Projects", ln=True)
-        pdf.set_font("Arial", size=12)
-        for proj in projects:
-            pdf.multi_cell(0, 10, txt=f"{proj['title']} | {proj['tech_stack']}\n{proj['description']}\n")
-    
-    # Add Experience
-    if experience:
-        pdf.set_font("Arial", 'B', size=14)
-        pdf.cell(200, 10, txt="Experience", ln=True)
-        pdf.set_font("Arial", size=12)
-        for exp in experience:
-            pdf.multi_cell(0, 10, txt=f"{exp['role']} at {exp['company']}\nDuration: {exp['duration']}\n")
-            for point in exp['responsibilities']:
-                pdf.multi_cell(0, 10, txt=f"- {point}")
+    # Skills
+    pdf.set_font("Arial", 'B', size=12)
+    pdf.cell(0, 10, txt="Skills", ln=True)
+    pdf.set_font("Arial", size=10)
+    pdf.multi_cell(0, 8, txt=", ".join(skills))
+    pdf.ln(0)  # Add a small gap
 
-    # Add Interests
-    if interests:
-        pdf.set_font("Arial", 'B', size=14)
-        pdf.cell(200, 10, txt="Interests", ln=True)
-        pdf.set_font("Arial", size=12)
-        pdf.multi_cell(0, 10, txt=", ".join(interests))
+    # Projects
+    if projects:
+        pdf.set_font("Arial", 'B', size=12)
+        pdf.cell(0, 10, txt="Projects", ln=True)
+        pdf.set_font("Arial", size=10)
+        for proj in projects:
+            pdf.multi_cell(0, 8, txt=f"{proj['title']} | {proj['tech_stack']}\n{proj['description']}")
     
+    # Experience
+    if experience:
+        pdf.set_font("Arial", 'B', size=12)
+        pdf.cell(0, 10, txt="Experience", ln=True)
+        pdf.set_font("Arial", size=10)
+        for exp in experience:
+            pdf.multi_cell(0, 8, txt=f"{exp['role']} at {exp['company']} | Duration: {exp['duration']}")
+            for point in exp['responsibilities']:
+                pdf.multi_cell(0, 8, txt=f"- {point}")
+
+    # Interests
+    if interests:
+        pdf.set_font("Arial", 'B', size=12)
+        pdf.cell(0, 10, txt="Interests", ln=True)
+        pdf.set_font("Arial", size=10)
+        pdf.multi_cell(0, 8, txt=", ".join(interests))
+    
+    # Save the PDF
     pdf_output = "generated_resume.pdf"
     pdf.output(pdf_output)
     return pdf_output
-
 # Generate DOCX resume
 def generate_docx(user_data, summary, education, experience, skills, interests, projects):
     doc = Document()
@@ -184,7 +189,7 @@ def generate_docx(user_data, summary, education, experience, skills, interests, 
 #     return txt_output
 
 # Streamlit App to Collect User Data and Generate Resume
-st.title("ATS-Friendly Resume Generator with RAG")
+st.title("ATS-Friendly Resume Generator")
 
 # Input Form for Resume Details
 user_name = st.text_input("Full Name")
@@ -197,7 +202,7 @@ job_description = st.text_area("Job Description (from job post)")
 # Education Section (Dynamic)
 st.subheader("Education")
 education_entries = []
-num_education = st.number_input("Number of Education Entries", min_value=1, max_value=5, value=1)
+num_education = st.number_input("Number of Education Entries", min_value=1, max_value=10, value=1)
 for i in range(num_education):
     with st.expander(f"Education Entry {i+1}"):
         degree = st.text_input(f"Degree {i+1}")
@@ -217,7 +222,7 @@ for i in range(num_education):
 add_experience = st.checkbox("Add Work Experience")
 experience_entries = []
 if add_experience:
-    num_experience = st.number_input("Number of Work Experiences", min_value=1, max_value=5, value=1)
+    num_experience = st.number_input("Number of Work Experiences", min_value=0, max_value=10, value=0)
     for i in range(num_experience):
         with st.expander(f"Experience Entry {i+1}"):
             role = st.text_input(f"Role {i+1}")
@@ -239,7 +244,7 @@ skills = st.text_area("Skills (comma separated)").split(",")
 add_projects = st.checkbox("Add Projects")
 projects = []
 if add_projects:
-    num_projects = st.number_input("Number of Projects", min_value=1, max_value=5, value=1)
+    num_projects = st.number_input("Number of Projects", min_value=0, max_value=10, value=0)
     for i in range(num_projects):
         with st.expander(f"Project {i+1}"):
             title = st.text_input(f"Project Title {i+1}")
